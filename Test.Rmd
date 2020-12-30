@@ -1,0 +1,114 @@
+---
+title: "Test"
+output: html_notebook
+---
+
+```{r}
+cf <- structure(list(Sample = structure(1:5, .Label = c("NH3-N", "Acetate", "Propionate","Total VFA", "Acetate:propionate ratio"), class = "factor"), 
+                     HY	= c(13.28,60.72,23.14,113.63,2.64),
+                     LY	= c(7.99,62.38,21.95,99.76,2.85)),.Names = c("Item", "HY", "LY"), class = "data.frame", row.names = c("1", "2","3","4","5"))
+```
+
+```{r}
+cf
+```
+
+```{r}
+HY	= c(13.28,60.72,23.14,113.63,2.64) ; LY	= c(7.99,62.38,21.95,99.76,2.85)
+tableau <- data.frame(x = HY, y = LY) 
+# Renommer les colonnes
+# en reprenant l'exemple ci-dessus
+colnames(tableau) <- c("HY","LY")
+# Si le tableau s'appelle data, on peut renommer ses colonnes
+data <- colnames(c("nouveau titre","titre nouveau"))
+
+# en reprenant l'exemple ci-dessus
+rownames(tableau) <- c("NH3-N", "Acetate", "Propionate","Total VFA", "Acetate:propionate ratio")
+```
+
+```{r}
+NH3_N = c(7.99, 13.28) ; Acetate = c(62.38, 60.72) ; Propionate = c(21.95, 23.14) ; Acetate_propionate_ratio = c(2.85, 2.64) ; VFA = c(99.76, 113.63)
+tableau <- data.frame(x = HY, y = LY) 
+# Renommer les colonnes
+# en reprenant l'exemple ci-dessus
+colnames(tableau) <- c("NH3-N", "Acetate", "Propionate","Total VFA", "Acetate:propionate_ratio")
+# Si le tableau s'appelle data, on peut renommer ses colonnes
+data <- colnames(c("nouveau titre","titre nouveau"))
+
+# en reprenant l'exemple ci-dessus
+rownames(tableau) <-c("HY","LY")
+```
+
+```{r}
+cormat <- round(cor(tableau),2)
+head(cormat)
+```
+
+
+
+```{r}
+data = as.data.frame(cf)
+
+data$HY = as.numeric(data$HY)
+data$LY = as.numeric(data$LY)
+data$Item= as.numeric(data$Item)
+
+data = as.matrix(data)
+
+# The mtcars dataset:
+cormat <- round(cor(data),1)
+head(cormat)
+```
+
+```{r}
+library(reshape2)
+melted_cormat <- melt(cormat)
+head(melted_cormat)
+```
+
+```{r}
+library(ggplot2)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab",
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+```
+
+```{r}
+rf <- structure(list(Sample = structure(1:2, .Label = c("HY", "LY"), class = "factor"), 
+                     bacteroidetes= c(49.1,65.61),
+                     firmicutes	= c(44.33,27.71),
+                     proteobacteria	= c(0.93,2.09),	
+                     tenericutes= c(1.32,1.57),	
+                     saccharibacteria	= c(1.07,0.79),
+                     Prevotella_1= c(29.14,37.48),	
+                     Ruminococcaceae_NK4A214_group = c(7.20, 4.12),	
+                     Succiniclasticum	= c(7.69,3.57),	
+                     Prevotellaceae	= c(4.21,5.96),	
+                     Prevotella_7	= c(0.47,8.41),	
+                     Bacteroidales_S24_7_group = c(3.55,3.44),
+                     Ruminococcus = c(4.41,1.36),	
+                     Bacteroidales_BS11 = c(3.36,2.21),	
+                     Rikenellaceae_RC9_gut_group = c(2.67,2.87),	
+                     Christensenellaceae_R_7_group = c(3.12,2.00),	
+                     Prevotellaceae_UCG_003 = c(2.00,2.20),	
+                     Lachnospiraceae_NK3A20_group	= c(2.91,1.18),	
+                     Ruminococcaceae_UCG_014 = c(1.87,1.99),	
+                     Prevotellaceae_UCG_001	= c(1.36,1.55),
+                     Eubacterium_coprostanoligenes_group= c(1.93,0.80)),.Names = c("Rendement", " bacteroidetes", "firmicutes", "proteobacteria", "tenericutess", "saccharibacteria","Prevotella_18","Ruminococcaceae-NK4A214-group","Succiniclasticum", "Succiniclasticum", "Prevotellaceae","Bacteroidales_S24_7_group","Ruminococcus","Bacteroidales_BS11","Rikenellaceae_RC9_gut_group","Christensenellaceae_R_7_group","Prevotellaceae_UCG_003","achnospiraceae-NK3A20-group","PRuminococcaceae_UCG_014","Prevotellaceae_UCG_001","Eubacterium_coprostanoligenes_group"), class = "data.frame", row.names = c("1", "2"))
+```
+
+
+
+
+
+
+
+
+
+

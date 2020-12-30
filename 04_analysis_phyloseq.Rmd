@@ -1,0 +1,225 @@
+---
+title: "CC3 Microbiote des vaches laitières"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r}
+library(ggplot2)
+library(dada2)
+library(phyloseq)
+library(Biostrings)
+library(DECIPHER)
+```
+
+```{r}
+load("~/EcoG2-CC3/02_data_analysis_FinalEnv")
+```
+
+```{r}
+samples.out <- rownames(seqtab.nochim)
+rendement <- sapply(strsplit(samples.out, "_"), `[`, 1)
+rendement <- (sapply(strsplit(samples.out, "_"), `[`, 1))
+genus <- substr(rendement,1,22)
+samdf <- data.frame(Rendement=rendement, Genus=genus)
+samdf$Rendement <- c("Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","Low_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield","High_yield")
+samdf$Genus[samdf$Rendement==22] <- c("Actinobacteriota", "Bacteroidota", "Cyanobacteria", "Elusimicrobiota", "Fibrobacterota", "Firmicutes", "Patescibacteria", "Proteobacteria", "Synergistota", "Verrucomicrobiota")
+rownames(samdf) <- samples.out
+```
+
+
+```{r}
+library(DECIPHER)
+library(phangorn)
+seqs <- getSequences(seqtab.nochim)
+names(seqs) <- seqs # This propagates to the tip labels of the tree
+alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA,verbose=FALSE)
+phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
+dm <- dist.ml(phangAlign)
+treeNJ <- NJ(dm) # Note, tip order != sequence order
+fit = pml(treeNJ, data=phangAlign)
+## negative edges length changed to 0!
+fitGTR <- update(fit, k=4, inv=0.2)
+fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+        rearrangement = "stochastic", control = pml.control(trace = 0))
+detach("package:phangorn", unload=TRUE)
+```
+
+
+
+# Ordination  
+
+
+```{r}
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa), phy_tree(fitGTR$tree))
+ps
+```
+```{r}
+# Transform data to proportions as appropriate for Bray-Curtis distances
+ps.prop <- transform_sample_counts(ps, function(tax_table) tax_table/sum(tax_table))
+ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
+```
+
+## Visualisation de l'ordination
+
+# PCoA avec Bray curtis 
+
+```{r}
+ord <-plot_ordination(ps.prop, ord.pcoa.bray, color="Genus", shape = "Rendement", title="Bray PCoA")
+ord
+```
+
+
+```{r}
+beta <- read.table(taxa.print, sep = "\t", head = T, row=1)
+pc.beta <- cmdscale (beta, k=2)
+plot(pc.beta [,1], pc.beta[,2])
+```
+
+# PCoA avec unifrac 
+```{r}
+library(phyloseq)
+library(vegan)
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:10]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+
+ord = ordinate(ps, "PCoA", "unifrac", weighted = TRUE)
+(ordplot <- plot_ordination(ps.top20, ord, "Genus", color="Rendement", shape="SampleType", label="Genus"))
+
+# get data from the plotted ordination. Not strictly necessary but can be useful
+orddata <- ordplot$data
+
+# add a fake variable to the experiment
+sample_data(ps.top20)$fake <- 1:nsamples(ps.top20)
+
+# get map out of phyloseq object 
+map.df <- data.frame(sample_data(ps.top20))
+```
+
+```{r}
+library("ggplot2")
+ordplot + 
+  stat_ellipse(type = "norm", linetype = 2) +
+  stat_ellipse(type = "t") +
+  theme_bw()
+```
+
+
+# Bar plot
+## Au niveau du Phylum 
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:10]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+```
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:75]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+```
+
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[50:100]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+```
+
+
+## Au niveau du genre 
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:50]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+```
+
+## Au niveau du genre 2
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[50:100]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+counts <- table(samdf$Rendement)
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:100]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+barplot(ps.top20,
+  xlab="Rendement", col=c("darkblue","red"),
+  legend = rownames(counts))
+```
+
+```{r}
+p<-ggplot(data=ps, aes(x="Rendement", y=genus)) +
+  geom_bar(stat="identity")
+p
+```
+
+```{r}
+mpg$class <- factor(mpg$class, levels = c("Pseudobutyrivibrio", "Prevotella"))
+m <- ggplot(mpg, aes("Rendement", fill=class))
+m + geom_bar(color=blue)
+```
+
+```{r}
+ggplot(samdf,aes(x=factor(Rendement),fill=factor(high_yield)))+geom_bar()
+```
+
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:100]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_grid(~Rendement, scales = "free", space = "free", labeller = as_labeller(ps.top20))
+```
+
+
+
+```{r}
+# Transform data to proportions as appropriate for Bray-Curtis distances
+ps.prop <- transform_sample_counts(ps, function(tax_table) tax_table/sum(tax_table))
+ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="unifrac")
+```
+
+## Visualisation de l'ordination
+
+# PCoA avec Bray curtis 
+
+```{r}
+ord <-plot_ordination(ps.prop, ord.pcoa.unifrac, color="Genus", shape = "Rendement", title="Bray PCoA")
+ord
+```
+
+
+
+
+
+
+
+
+

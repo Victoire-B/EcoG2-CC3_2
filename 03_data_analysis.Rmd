@@ -1,0 +1,178 @@
+---
+title: "CC3 Microbiote des vaches laitières"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r}
+library(dada2)
+```
+Lister les séquences du 10 sept 14 et du 11 mars 15 et attribuer une variable
+```{r}
+path <- "~/EcoG2-CC3/Seqreunies" # CHANGE ME to the directory containing the fastq files after unzipping.
+list.files(path)
+```
+
+```{r}
+# Forward and reverse fastq filenames have format: SAMPLENAME_R1_1.fastq and SAMPLENAME_R2_1.fastq
+fnFs <- sort(list.files(path, pattern="_1.fastq.", full.names = TRUE))
+fnRs <- sort(list.files(path, pattern="_2.fastq", full.names = TRUE))
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+```
+
+```{r}
+plotQualityProfile(fnFs[1:2])
+```
+
+Des reverses (= les reads 2)
+```{r}
+plotQualityProfile(fnRs[1:2])
+```
+
+### Définir les noms de fichiers pour les fichiers fastq.gz filtrés
+```{r}
+# Place filtered files in filtered/ subdirectory
+filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+```
+
+```{r}
+out<-filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(295,230),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+```
+
+```{r}
+head(out)
+```
+
+
+# Apprentissage des erreurs 
+
+```{r}
+errF <- learnErrors(filtFs, multithread=TRUE)
+```
+
+```{r}
+errR <- learnErrors(filtRs, multithread=TRUE)
+```
+
+## Visualisation des modèles d'ereur du forward
+
+En abscisse on a la probabilité des mutations et en ordonnée le q score
+La fonction plotError permet de visualiser les erreurs. 
+
+```{r}
+plotErrors(errF, nominalQ=TRUE)
+```
+
+```{r}
+plotErrors(errR, nominalQ=TRUE)
+```
+Chaque mutation possible ( T→G, ...) le taux d'erreur sont indiqués. 
+-points : les taux d'erreur observés pour chaque score de qualité du consensus. 
+-ligne noire : taux d'erreur estimés après convergence de l'algorithme de la machine d'apprentissage. 
+-ligne rouge : taux d'erreur attendus selon la définition nominale du Q-score.
+Les fenêtres montrent les replacements d'une base à une autre.
+Quand on remplace les A avec les T et les T avec les A, la courbe se rapproche du taux d'erreur attendue selon la définition du Q-score.
+
+
+## Exemple d'interférences
+
+Dans deux nouvelles variables (pour les R1 et les R2),où est appliqué la fonction dada() avec le modèle d'erreur et les reads filtrés dont on a enlevé les bases au délà d'un Q-score inférieur à 30. 
+```{r}
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+```
+
+```{r}
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+```
+
+Cette fonction permet d'enlever le bruit des paires de forward et des reverse 
+Pour chaque échantillon, dada2 nous donne le résultat du nombre de reads avec des séquences uniques. 
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+# Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+On a appliqué la fonction mergePairs() qui permet d'associer les R1 et le R2 par paires de lecture sans bruit (filtrés) en éliminant les reads qui ne chevauchent pas assez (overlap) ou justement ceux qui ont une trop grande disconcordance dans ce chevauchement.
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+# Inspection des longueurs de séquences
+
+
+On va constuire une table avec des variants, on obtient alors des séquences avec une meilleure résolution par rapport table d'OTU
+```{r}
+table(nchar(getSequences(seqtab)))
+```
+
+Ce tableau contient les séquences correspondant ainsi à la longueur de la région V4 et V5 de l'ARN 16S amplifiée.
+
+
+# Chimères
+
+Cette fonction permet d'enlever les chimères par méthode consensus 
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+```
+
+Parmi les 19426 séquences mises, 17869 chimères ont été retrouvées. 
+
+## Faire le ratio
+
+Voir le nombre de chimères, c'est le pourcentage de chimères dans notre échantillon
+```{r}
+1- sum(seqtab.nochim)/sum(seqtab)
+```
+Ici, on obtient 22% de chimères, l'alignement a bien été réalisé.
+
+# Construction d'une table et évolution des filtres de qualité
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+head(track)
+```
+Cete étape permet d'obtenir chacun de nos échantillons, et de comparer toutes les séquences auxquelles elles appartiennent. Cela permet de voir les différentes étapes de la filtration de nos données jusqu'à l'éminination des chimères. 
+
+
+#Assignation taxonomique
+
+```{r}
+library(dada2)
+taxa <- assignTaxonomy(seqtab.nochim, "~/EcoG2-CC2/silva_nr99_v138_train_set.fa.gz", multithread=TRUE)
+```
+On va comparer les séquences de nos échantillons grâce à la base de données Silva.
+
+## Assignation taxonomique n°2 Silva species assignement
+
+On va comparer nos séquences à la base de données Silva et on assigne une taxonomie à nos données de la Rade de Brest pour pouvoir les étudier. Cette taxonomie va jusqu'à l'espèce. 
+```{r}
+taxa <- addSpecies(taxa, "~/EcoG2-CC2/silva_species_assignment_v138.fa.gz")
+```
+```{r}
+taxa.print <- taxa # Removing sequence rownames for display only
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+Après cette assignation taxonomique, nous retrouvons majoritairement un grand nombre de bactéries et quelques séquences appartiennent à la branche des Archées. L'assignation va en grande majorité jusqu'au genre et quelque fois jusqu'à l'espèce. Cependant, à partir de l'ordre, des clades ont été crées pour assigner nos séquences de la rade de Brest. 
+La variable taxa.print a reçu toutes les séquences des échantillons avec une taxonomie assignée. Finalement 1557 taxa ont été retrouvés.
+
+```{r}
+save.image(file="02_data_analysis_FinalEnv")
+```
+
+
