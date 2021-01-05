@@ -15,7 +15,7 @@ library(DECIPHER)
 ```
 
 ```{r}
-load("~/EcoG2-CC3/02_data_analysis_FinalEnv")
+load("~/EcoG2-CC3_2/02_data_analysis_FinalEnv")
 ```
 
 ```{r}
@@ -73,13 +73,6 @@ ord <-plot_ordination(ps.prop, ord.pcoa.bray, color="Genus", shape = "Rendement"
 ord
 ```
 
-
-```{r}
-beta <- read.table(taxa.print, sep = "\t", head = T, row=1)
-pc.beta <- cmdscale (beta, k=2)
-plot(pc.beta [,1], pc.beta[,2])
-```
-
 # PCoA avec unifrac 
 ```{r}
 library(phyloseq)
@@ -114,112 +107,25 @@ ordplot +
 ## Au niveau du Phylum 
 
 ```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:10]
+library(RColorBrewer)
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:3000]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
-```
 
-```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:75]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
-```
-
-
-```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[50:100]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+pp =plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des phyla les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+pp + geom_bar(aes(color=Phylum, fill=Phylum), stat="identity", position="stack")
 ```
 
 
 ## Au niveau du genre 
 
 ```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:50]
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:200]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+pg <- plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+pg + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack")
 ```
-
-## Au niveau du genre 2
-
-```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[50:100]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
-```
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-counts <- table(samdf$Rendement)
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:100]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-barplot(ps.top20,
-  xlab="Rendement", col=c("darkblue","red"),
-  legend = rownames(counts))
-```
-
-```{r}
-p<-ggplot(data=ps, aes(x="Rendement", y=genus)) +
-  geom_bar(stat="identity")
-p
-```
-
-```{r}
-mpg$class <- factor(mpg$class, levels = c("Pseudobutyrivibrio", "Prevotella"))
-m <- ggplot(mpg, aes("Rendement", fill=class))
-m + geom_bar(color=blue)
-```
-
-```{r}
-ggplot(samdf,aes(x=factor(Rendement),fill=factor(high_yield)))+geom_bar()
-```
-
-
-```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:100]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_grid(~Rendement, scales = "free", space = "free", labeller = as_labeller(ps.top20))
-```
-
-
-
-```{r}
-# Transform data to proportions as appropriate for Bray-Curtis distances
-ps.prop <- transform_sample_counts(ps, function(tax_table) tax_table/sum(tax_table))
-ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="unifrac")
-```
-
-## Visualisation de l'ordination
-
-# PCoA avec Bray curtis 
-
-```{r}
-ord <-plot_ordination(ps.prop, ord.pcoa.unifrac, color="Genus", shape = "Rendement", title="Bray PCoA")
-ord
-```
-
-
-
-
-
-
 
 
 

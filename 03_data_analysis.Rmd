@@ -5,22 +5,25 @@ output:
     toc: true
     toc_depth: 4
 ---
+Avec Laurianne Voland, nous avons choisi de prendre l'article "Illumina sequencing analysis of the ruminal microbiota in high-yield and low-yield lactating dairy cows" de J. Tong & al. Il traite le séquençage des communautés bactériennes au sein du rumen des vaches Holstein de faible et huat rendement. Nous avons utilisé, pour analyser les données, la méthode de haute résolution Dada2. Nous pensons que les auteurs ne l'ont pas utilisé mais plutôt le clustering à 97%. Nos résultats ne correspondront donc pas forcément mais se rapprocheront de ceux de l'article. 
 
+Nous importons les échantillons depuis ENA. Nous avons remarqué une petite différence par rapprot à l'article. En effet, il était marqué un prélèvement de 16 échntillons, hors nous en avons 22. De plus, nous n'avons pas eu d'informations très claires pour différencier les échantillons haut et bas rendement. 
+Nous avons tout de même réalisé une distinctions entre les deux catégrories mais les résultats varient. 
 ```{r}
 library(dada2)
 ```
-Lister les séquences du 10 sept 14 et du 11 mars 15 et attribuer une variable
+
 ```{r}
-path <- "~/EcoG2-CC3/Seqreunies" # CHANGE ME to the directory containing the fastq files after unzipping.
+path <- "~/EcoG2-CC3_2/Seqreunies" # CHANGE ME to the directory containing the fastq files after unzipping.
 list.files(path)
 ```
 
 ```{r}
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_1.fastq and SAMPLENAME_R2_1.fastq
-fnFs <- sort(list.files(path, pattern="_1.fastq.", full.names = TRUE))
-fnRs <- sort(list.files(path, pattern="_2.fastq", full.names = TRUE))
+fnFs <- sort(list.files(path, pattern="_R1.fastq.", full.names = TRUE))
+fnRs <- sort(list.files(path, pattern="_R2.fastq", full.names = TRUE))
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
-sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+sample.names <- sapply(strsplit(basename(fnFs), "R"), `[`, 3)
 ```
 
 ```{r}
@@ -42,7 +45,7 @@ names(filtRs) <- sample.names
 ```
 
 ```{r}
-out<-filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(295,230),
+out<-filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(295,180),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
               compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 ```
@@ -93,8 +96,7 @@ dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
 dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
 ```
 
-Cette fonction permet d'enlever le bruit des paires de forward et des reverse 
-Pour chaque échantillon, dada2 nous donne le résultat du nombre de reads avec des séquences uniques. 
+
 ```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
 # Inspect the merger data.frame from the first sample
@@ -126,7 +128,7 @@ seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE
 dim(seqtab.nochim)
 ```
 
-Parmi les 19426 séquences mises, 17869 chimères ont été retrouvées. 
+ 
 
 ## Faire le ratio
 
@@ -134,7 +136,7 @@ Voir le nombre de chimères, c'est le pourcentage de chimères dans notre échan
 ```{r}
 1- sum(seqtab.nochim)/sum(seqtab)
 ```
-Ici, on obtient 22% de chimères, l'alignement a bien été réalisé.
+Ici, on obtient 31% de chimères, l'alignement a bien été réalisé.
 
 # Construction d'une table et évolution des filtres de qualité
 
@@ -146,10 +148,12 @@ colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "n
 rownames(track) <- sample.names
 head(track)
 ```
-Cete étape permet d'obtenir chacun de nos échantillons, et de comparer toutes les séquences auxquelles elles appartiennent. Cela permet de voir les différentes étapes de la filtration de nos données jusqu'à l'éminination des chimères. 
+Cete étape permet d'obtenir chacun de nos échantillons. Cela permet de voir les différentes étapes de la filtration de nos données jusqu'à l'éminination des chimères. 
 
 
 #Assignation taxonomique
+
+Nous avons choisi d'assigner une taxonomie d'après la base de données Silva. Encore une fois, nous n'avons pas d'information sur la base de données utulisées. 
 
 ```{r}
 library(dada2)
@@ -168,11 +172,9 @@ taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
-Après cette assignation taxonomique, nous retrouvons majoritairement un grand nombre de bactéries et quelques séquences appartiennent à la branche des Archées. L'assignation va en grande majorité jusqu'au genre et quelque fois jusqu'à l'espèce. Cependant, à partir de l'ordre, des clades ont été crées pour assigner nos séquences de la rade de Brest. 
-La variable taxa.print a reçu toutes les séquences des échantillons avec une taxonomie assignée. Finalement 1557 taxa ont été retrouvés.
+Après cette assignation taxonomique, nous retrouvons majoritairement des Firmicutes. L'assignation va en grande majorité jusqu'au genre. De nombreux clades ont été crées pour assigner les séquences provenant du rumen. 
+La variable taxa.print a reçu toutes les séquences des échantillons avec une taxonomie assignée. Finalement 3816 taxa ont été retrouvés.
 
 ```{r}
 save.image(file="02_data_analysis_FinalEnv")
 ```
-
-
