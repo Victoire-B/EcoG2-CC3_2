@@ -46,11 +46,18 @@ fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
         rearrangement = "stochastic", control = pml.control(trace = 0))
 detach("package:phangorn", unload=TRUE)
 ```
+# Création d'un arbre phylogénétique pour le phylum Proteobacteria
 
 
+```{r}
+PS.firm = subset_taxa(ps, Phylum == "Proteobacteria")
+
+plot_tree(PS.firm, color = "Rendement", shape = "Order", label.tips = "Family", plot.margin = 0.05, ladderize = TRUE)
+```
+
+Nous avons choisi d'intégrer un arbre phylogénétique dans notre compte rendu pour le phylum Proteobacteria. Nous avons testé pour les autres Phyla. À défaut de bien distinguer le noms des taxons, nous pouvons voir, grâve aux couleurs des points, que les phyla se retrouvent aussi bien chez les vaches "Low yield" et "High yield", et ce, en quantité quasiment équivalente. Nous avons observé le même type de résultat pour les autres phyla. 
 
 # Ordination  
-
 
 ```{r}
 ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
@@ -64,16 +71,18 @@ ps.prop <- transform_sample_counts(ps, function(tax_table) tax_table/sum(tax_tab
 ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
 ```
 
-## Visualisation de l'ordination
 
-# PCoA avec Bray curtis 
+
+# Visualisation de l'ordination
+
+## PCoA avec Bray curtis 
 
 ```{r}
 ord <-plot_ordination(ps.prop, ord.pcoa.bray, color="Genus", shape = "Rendement", title="Bray PCoA")
 ord
 ```
 
-# PCoA avec unifrac 
+## PCoA avec unifrac 
 ```{r}
 library(phyloseq)
 library(vegan)
@@ -108,12 +117,15 @@ ordplot +
 
 ```{r}
 library(RColorBrewer)
+library(ggsci)
+library(RColorBrewer)
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:3000]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
 
+
 pp =plot_bar(ps.top20, x="Rendement", fill="Phylum", title="Diversité des phyla les plus abondants") +  facet_wrap(~Rendement, scales = "free")
-pp + geom_bar(aes(color=Phylum, fill=Phylum), stat="identity", position="stack")
+pp + geom_bar(aes(color=Phylum, fill=Phylum), stat="identity", position="stack") + scale_fill_brewer(palette="Paired") + scale_color_brewer(palette="Paired")
 ```
 
 
@@ -123,9 +135,37 @@ pp + geom_bar(aes(color=Phylum, fill=Phylum), stat="identity", position="stack")
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:200]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
-pg <- plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genre les plus abondants") +  facet_wrap(~Rendement, scales = "free")
-pg + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack")
+pg <- plot_bar(ps.top20, x="Rendement", fill="Genus", title="Diversité des genres les plus abondants") +  facet_wrap(~Rendement, scales = "free")
+pg + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack")+ scale_color_igv()+ scale_fill_igv()
 ```
+Sur ces bar plot représentant les genres les plus abondants des communautés bactériennes 
 
+# Afin de mieux 
+```{r}
+library(ggplot2)
+library(phyloseq)
+library(data.table)
+
+# get abundance in %
+phy <- transform_sample_counts(ps.top20, function(x) x/sum(x))
+# agglomerate taxa
+glom <- tax_glom(phy, taxrank = 'Phylum')
+# create dataframe from phyloseq object
+dat <- data.table(psmelt(glom))
+# convert Phylum to a character vector from a factor because R
+dat$Phylum <- as.character(dat$Phylum)
+# group dataframe by Phylum, calculate median rel. abundance
+dat[, median := median(Abundance, na.rm = TRUE), 
+    by = "Phylum"]
+# Change name to remainder of Phylum less than 1%
+dat[(median <= 0.01), Phylum := "Remainder"]
+# boxplot
+ggplot(dat[Abundance > 0],
+       aes(x=Phylum,
+           y=Abundance)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  scale_y_log10()
+```
 
 

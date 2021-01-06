@@ -104,6 +104,17 @@ rf <- structure(list(Sample = structure(1:2, .Label = c("HY", "LY"), class = "fa
 ```
 
 
+```{r}
+tf <- data.frame(x =1:15,
+                 F =(-8,34, 3,08, 4,12, -1,75, -7,94, 0,11, 3,05, 1,15, -0,2, 1,12, -0,2, 1,73, -0,12, -0,19
+1,13
+))
+
+require(ggplot2)
+ggplot(df, aes(x = x, y = F)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymax = U, ymin = L))
+```
 
 
 

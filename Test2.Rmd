@@ -377,6 +377,15 @@ heatmap(lf, scale = "row")
 
 ## Corrélation de Pearson 
 
+
+```{r}
+library(correlation)
+cor<-correlation::correlation(HM,
+  include_factors = TRUE, method = "auto")
+cor
+```
+
+
 ```{r}
 library(ggpubr)
 
@@ -497,7 +506,7 @@ rownames(diff) <-c("0.07928", "0.1691", "0.2233", "0.1085", "0.4645", "0.01002",
 ```
 
 ```{r}
-vec <- c(-8.34,3.08,4.12,-1.75,-7.94,0.11,3.05,1.15,-0.2,1.12,-0.2,1.73,-0.12,-0.19,1.13)
+vec2 <- c(-8.34,3.08,4.12,-1.75,-7.94,0.11,3.05,1.15,-0.2,1.12,-0.2,1.73,-0.12,-0.19,1.13)
 ```
 
 ```{r}
@@ -584,13 +593,20 @@ ggplot(Diffpval, aes(x=p_value, y=DIFF)) +
     geom_point()
 ```
 ```{r}
-inf = c(-10.3520657752844, 1.17103130050195, 1.56644446690521, -2.83464130653298, -13.4420381826682, 0.021983285933486, 0.061054923576418 ,0.023020708889469, -0.395996398454006, 0.02242016865757, -0.395996398454006, 0.034631153372854, -0.286308458921961, -0.453321726626439, -0.436071321515136) ; sup = c(-6.3279342247156, 4.98896869949805, 6.67355553309479, -0.665358693467018, -2.43796181733178, 0.198016714066514, 6.03894507642358, 2.27697929111053, -0.004003601545995, 2.21757983134243, -0.004003601545995, 3.42536884662715, 0.046308458921961, 0.073321726626439, 2.69607132151514)
-af <- data.frame(x = inf, y = sup) 
+genre = c("Prevotella_1", "Ruminococcaceae_NK4A214_group", "Succiniclasticum", "Prevotellaceae", "Prevotella_7", "Bacteroidales_S24_7_group", "Ruminococcus_2", "Bacteroidales_BS11", "Rikenellaceae_RC9_gut_group", "Christensenellaceae_R_7_group", "Prevotellaceae_UCG_003", "Lachnospiraceae_NK3A20_group", "Ruminococcaceae_UCG_014", "Prevotellaceae_UCG_001",
+ "Eubacterium_coprostanoligenes_group") ; DIFF = c(-8.34, 3.08, 4.12, -1.75, -7.94, 0.11, 3.05, 1.15, -0.2, 1.12, -0.2, 1.73, -0.12, -0.19, 1.13)
+Essai <- data.frame(x = genre, y = DIFF) 
 # Renommer les colonnes
-colnames(af) <- c("inf", "sup")
+colnames(Essai) <- c("genre", "DIFF")
 # Renommer les lignes
-rownames(af) <-c("Prevotella_1", "Ruminococcaceae_NK4A214_group", "Succiniclasticum", "Prevotellaceae", "Prevotella_7", "Bacteroidales_S24_7_group", "Ruminococcus_2", "Bacteroidales_BS11", "Rikenellaceae_RC9_gut_group", "Christensenellaceae_R_7_group", "Prevotellaceae_UCG_003", "Lachnospiraceae_NK3A20_group", "Ruminococcaceae_UCG_014", "Prevotellaceae_UCG_001",
- "Eubacterium_coprostanoligenes_group")
+rownames(Essai) <-c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15")
+```
+
+```{r}
+library(ggplot2)
+dataEssai <-as.data.frame(Essai)
+#say your dataframe is stored as data
+ggplot(dataEssai, aes(x=dataEssai$DIFF))+geom_point()
 ```
 
 
@@ -631,6 +647,20 @@ ggplot(data) +
     geom_errorbar( aes(x=name, ymin=value-sd, ymax=value+sd), width=0.4, colour="orange", alpha=0.95, size=1)
 ```
 
+```{r}
+library(ggplot2)
+data_Diff <- data.frame(
+  p_value=c("0.07928", "0.1691", "0.2233", "0.1085", "0.4645", "0.01002", "0.3096", "0.1296", "0.02297", "0.1371", "0.03029", "0.2548", "0.01978", "0.04151", "0.2498") ,  
+  Difference_between_proportion=c(-8.34,3.08,4.12,-1.75,-7.94,0.11,3.05,1.15,-0.2,1.12,-0.2,1.73,-0.12,-0.19,1.13)
+  )
+ 
+# Plot
+f<-ggplot(data_Diff, aes(x=p_value, y=Difference_between_proportion)) +
+  geom_point() + 
+  geom_segment( aes(x=p_value, xend=p_value, y=0, yend=Difference_between_proportion))
+
+f+ coord_flip()
+```
 
 
 
