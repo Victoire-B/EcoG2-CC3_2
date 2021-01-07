@@ -5,10 +5,11 @@ output:
     toc: true
     toc_depth: 4
 ---
-Avec Laurianne Voland, nous avons choisi de prendre l'article "Illumina sequencing analysis of the ruminal microbiota in high-yield and low-yield lactating dairy cows" de J. Tong & al. Il traite le séquençage des communautés bactériennes au sein du rumen des vaches Holstein de faible et huat rendement. Nous avons utilisé, pour analyser les données, la méthode de haute résolution Dada2. Nous pensons que les auteurs ne l'ont pas utilisé mais plutôt le clustering à 97%. Nos résultats ne correspondront donc pas forcément mais se rapprocheront de ceux de l'article. 
+Avec Laurianne Voland, nous avons choisi de prendre l'article "Illumina sequencing analysis of the ruminal microbiota in high-yield and low-yield lactating dairy cows" de J. Tong & al. Il traite le séquençage des communautés bactériennes au sein du rumen des vaches Holstein de faible et haut rendement. Nous avons utilisé, pour analyser les données, la méthode de haute résolution Dada2. Nous pensons que les auteurs ne l'ont pas utilisé mais plutôt le clustering à 97%. Nos résultats ne correspondront donc pas forcément mais se rapprocheront de ceux de l'article. 
 
-Nous importons les échantillons depuis ENA. Nous avons remarqué une petite différence par rapprot à l'article. En effet, il était marqué un prélèvement de 16 échntillons, hors nous en avons 22. De plus, nous n'avons pas eu d'informations très claires pour différencier les échantillons haut et bas rendement. 
-Nous avons tout de même réalisé une distinctions entre les deux catégrories mais les résultats varient. 
+Nous importons les échantillons depuis ENA. Nous avons remarqué une petite différence par rapprot à l'article. En effet, il était marqué un prélèvement de 16 échantillons, hors nous en avons 22. De plus, nous n'avons pas eu d'informations très claires pour différencier les échantillons haut et bas rendement. 
+Nous avons tout de même réalisé une distinctions entre les deux catégrories mais les résultats varient. Les 11 premiers ont été classés comme appartenant à faible rendement et les 11 derniers appartenant à haut rendement.
+
 ```{r}
 library(dada2)
 ```
@@ -153,7 +154,7 @@ Cete étape permet d'obtenir chacun de nos échantillons. Cela permet de voir le
 
 #Assignation taxonomique
 
-Nous avons choisi d'assigner une taxonomie d'après la base de données Silva. Encore une fois, nous n'avons pas d'information sur la base de données utulisées. 
+Nous avons choisi d'assigner une taxonomie d'après la base de données Silva. Encore une fois, nous n'avons pas d'information sur la base de données utilisée. 
 
 ```{r}
 library(dada2)
@@ -163,7 +164,6 @@ On va comparer les séquences de nos échantillons grâce à la base de données
 
 ## Assignation taxonomique n°2 Silva species assignement
 
-On va comparer nos séquences à la base de données Silva et on assigne une taxonomie à nos données de la Rade de Brest pour pouvoir les étudier. Cette taxonomie va jusqu'à l'espèce. 
 ```{r}
 taxa <- addSpecies(taxa, "~/EcoG2-CC2/silva_species_assignment_v138.fa.gz")
 ```
