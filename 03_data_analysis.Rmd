@@ -8,7 +8,7 @@ output:
 Avec Laurianne Voland, nous avons choisi de prendre l'article "Illumina sequencing analysis of the ruminal microbiota in high-yield and low-yield lactating dairy cows" de J. Tong & al. Il traite le séquençage des communautés bactériennes au sein du rumen des vaches Holstein de faible et haut rendement. Nous avons utilisé, pour analyser les données, la méthode de haute résolution Dada2. Nous pensons que les auteurs ne l'ont pas utilisé mais plutôt le clustering à 97%. Nos résultats ne correspondront donc pas forcément mais se rapprocheront de ceux de l'article. 
 
 Nous importons les échantillons depuis ENA. Nous avons remarqué une petite différence par rapprot à l'article. En effet, il était marqué un prélèvement de 16 échantillons, hors nous en avons 22. De plus, nous n'avons pas eu d'informations très claires pour différencier les échantillons haut et bas rendement. 
-Nous avons tout de même réalisé une distinctions entre les deux catégrories mais les résultats varient. Les 11 premiers ont été classés comme appartenant à faible rendement et les 11 derniers appartenant à haut rendement.
+Nous avons tout de même réalisé une distinction entre les deux catégrories mais les résultats varient. Les 11 premiers ont été classés comme appartenant à faible rendement et les 11 derniers appartenant à haut rendement.
 
 ```{r}
 library(dada2)
