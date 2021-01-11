@@ -122,7 +122,7 @@ Ce tableau contient les séquences correspondant ainsi à la longueur de la rég
 
 # Chimères
 
-Cette fonction permet d'enlever les chimères par méthode consensus 
+Cette fonction permet d'enlever les chimères par méthode consensus
 
 ```{r}
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
@@ -154,7 +154,7 @@ Cete étape permet d'obtenir chacun de nos échantillons. Cela permet de voir le
 
 #Assignation taxonomique
 
-Nous avons choisi d'assigner une taxonomie d'après la base de données Silva. Encore une fois, nous n'avons pas d'information sur la base de données utilisée. 
+Nous avons choisi d'assigner une taxonomie d'après la base de données Silva. Encore une fois, nous n'avons pas d'information sur la base de données utilisée.
 
 ```{r}
 library(dada2)
@@ -164,9 +164,6 @@ On va comparer les séquences de nos échantillons grâce à la base de données
 
 ## Assignation taxonomique n°2 Silva species assignement
 
-```{r}
-taxa <- addSpecies(taxa, "~/EcoG2-CC2/silva_species_assignment_v138.fa.gz")
-```
 ```{r}
 taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
